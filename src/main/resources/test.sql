@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS public.islem, public.kitap, public.yazar, public.tur, public.ogrenci CASCADE;
+
 CREATE TABLE IF NOT EXISTS public.ogrenci
 (
     ogrno bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
@@ -167,3 +169,62 @@ INSERT INTO islem(ogrno, kitapno, atarih, vtarih)
 VALUES(8, 5, '2006-01-01 00:00:00', '2006-01-17 00:00:00');
 INSERT INTO islem(ogrno, kitapno, atarih, vtarih)
 VALUES(10, 10, '2006-01-01 00:00:00', '2006-01-17 00:00:00');
+
+INSERT INTO public.tur(ad)
+SELECT 'Biyografi'
+WHERE NOT EXISTS (SELECT 1 FROM public.tur WHERE ad = 'Biyografi');
+
+INSERT INTO public.yazar(ad, soyad)
+SELECT 'Nurettin', 'Belek'
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.yazar WHERE ad = 'Nurettin' AND soyad = 'Belek'
+);
+
+UPDATE public.ogrenci
+SET sinif = '10C'
+WHERE sinif = '10B';
+
+UPDATE public.kitap
+SET puan = puan + 5
+WHERE puan < 100;
+
+DELETE FROM public.yazar
+WHERE ad = 'Mehmet';
+
+INSERT INTO public.tur(ad)
+SELECT 'Kişisel Gelişim'
+WHERE NOT EXISTS (SELECT 1 FROM public.tur WHERE ad = 'Kişisel Gelişim');
+
+UPDATE public.kitap
+SET turno = (SELECT turno FROM public.tur WHERE ad = 'Kişisel Gelişim')
+WHERE ad = 'Benim Üniversitelerim';
+
+CREATE OR REPLACE FUNCTION public.ogrencilistesi()
+RETURNS SETOF public.ogrenci
+LANGUAGE sql
+AS $$
+    SELECT * FROM public.ogrenci ORDER BY ogrno;
+$$;
+
+CREATE OR REPLACE PROCEDURE public.ekle(
+    IN kitap_ad character varying,
+    IN kitap_puan integer,
+    IN kitap_yazarno bigint,
+    IN kitap_turno bigint
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    INSERT INTO public.kitap(ad, puan, yazarno, turno)
+    VALUES (kitap_ad, kitap_puan, kitap_yazarno, kitap_turno);
+END;
+$$;
+
+CREATE OR REPLACE PROCEDURE public.sil(IN ogrenci_no bigint)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    DELETE FROM public.islem WHERE ogrno = ogrenci_no;
+    DELETE FROM public.ogrenci WHERE ogrno = ogrenci_no;
+END;
+$$;
